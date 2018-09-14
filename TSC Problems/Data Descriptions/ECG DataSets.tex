@@ -1,0 +1,78 @@
+There are seven ECG datasets:
+
+CinCECGtorso
+ECG200
+ECG5000
+ECGFiveDays
+NonInvasiveFatalECGThorax1
+NonInvasiveFatalECGThorax2
+TwoLeadECG
+
+, all(?) extracted from physionet and formatted in some way.
+
+\section{CinCECGtorso}
+
+This is a Computers in Cardiology problem, seems to be the 2007 challenge. 
+
+The UCR data:
+Train Size 40
+Test Size 1380
+Length:	1639	
+Nos Classes: 4
+
+Accuracies: 
+DTW: 92.75
+COTE (BEST): 98.25
+TSF (Good): 97.37
+
+\section{Computers in Cardiology Challenges}
+
+https://www.physionet.org/challenge/
+
+
+The original data is here
+https://www.physionet.org/physiobank/database/apnea-ecg/
+paper is here.
+http://ecg.mit.edu/george/publications/apnea-ecg-cinc-2000.pdf
+
+This database is described in
+T Penzel, GB Moody, RG Mark, AL Goldberger, JH Peter.  The Apnea-ECG Database. Computers in Cardiology 2000;27:255-258.
+The problem:
+Can sleep apnea be diagnosed based on evidence from the ECG? Based on results obtained by entrants in the Computers in Cardiology Challenge 2000, yes. Each entrant has analyzed a set of 35 recordings, either for screening (in which each recording is classified as containing apnea or not), or for quantitative assessment (in which each minute of each recording is classified as containing apnea or not). Summarized below are the scores of the top finishers in each event. These are outstanding results that demonstrate conclusively that apnea can be detected reliably from the ECG using a variety of methods.
+
+The data consist of 70 records, divided into a learning set of 35 records (a01 through a20, b01 through b05, and c01 through c10), and a test set of 35 records (x01 through x35), all of which may be downloaded from this page. Recordings vary in length from slightly less than 7 hours to nearly 10 hours each.
+
+Two problems:
+Event 1 (Apnea Screening):
+3 classes, Apnea, possible Apnea, no Apnea, but only need to predict Apnea or Not.
+Tests
+
+\section{NonInvasiveFatalECGThorax1 and NonInvasiveFatalECGThorax2}
+
+NonInvasiveFetalECGThorax1	1800	1965	750	42
+NonInvasiveFetalECGThorax2	1800	1965	750	42
+
+Accuracies:
+DTW: 70.9/84.6
+COTE: 92.9/94.6
+ST (BEST) : 94.68/93.69
+
+each of them corresponds to the record of the ECG from left and right thorax. Hence, in this data set, each type of non-invasive fetal ECG corresponds to a 2D time series.
+What TSC  paper is it from though?
+
+think it is this
+https://physionet.org/physiobank/database/nifecgdb/
+
+is it this?
+https://www.physionet.org/challenge/2013/
+
+\section{Others}
+
+BIDMC Congestive Heart Failure Database [3].
+The BIDMC Congestive Heart Failure Database, www.physionet.org/physiobank/database/chfdb/
+Paper:
+http://www.cs.ucr.edu/~eamonn/SDM_RealisticTSClassifcation_cameraReady.pdf
+
+
+http://www.cs.ucr.edu/~eamonn/ICDM_mdl.pdf
+estimated over the 200 normal examples the proceeded time zero in record 108 of the MIT BIH Arrhythmia Database (bottom).

@@ -7,9 +7,9 @@ from collections import defaultdict
 from sklearn.ensemble import BaggingClassifier
 from sklearn.neighbors import NearestNeighbors
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.cluster import KMeans
 
 from sklearn.utils.validation import check_is_fitted
-
 from wildboar.tree import ShapeletTreeClassifier
 from wildboar.distance import matches, distance
 
@@ -25,6 +25,7 @@ def shape_transform_(s, x, i, theta):
     x_match = x[i:(i + s.shape[0])]
     v = (x_match - s)  # + np.finfo(np.float64).eps
     norm_v = np.linalg.norm(v)
+
     if norm_v == 0:
         x_match = np.random.uniform(s.shape)
         v = (x_match - s)
@@ -72,31 +73,65 @@ class LabelTransformer(ABC):
 
 
 class NearestNeighbourLabelTransformer(LabelTransformer):
-    def __init__(self, metric="euclidean"):
+    def __init__(self,
+                 n_neighbors=1,
+                 n_clusters="auto",
+                 metric="euclidean",
+                 random_state=10):
         self.nn_ = None
+        self.n_neighbors = n_neighbors
         self.metric = metric
+        self.n_clusters = n_clusters
+        self.random_state = random_state
 
     def fit(self, x, y, to_label):
+        if self.n_clusters == "auto":
+            self.n_clusters = x.shape[0] // self.n_neighbors
+
+        self.classes_, y = np.unique(y, return_inverse=True)
+        n_classes = len(self.classes_)
+        to_idx = np.argwhere(self.classes_ == to_label)[0][0]
+        self.kmeans_ = KMeans(
+            n_clusters=self.n_clusters, random_state=self.random_state)
+
+        self.kmeans_.fit(x)
+        center_majority = np.zeros([self.kmeans_.n_clusters, n_classes])
+        for l, c in zip(self.kmeans_.labels_, y):
+            center_majority[l, c] += 1
+
+        center_prob = center_majority / np.sum(
+            center_majority, axis=1).reshape(-1, 1)
+
+        majority_class = center_prob[:, to_idx] > (1.0 / n_classes)
+        maximum_class = center_majority[:, to_idx] >= (
+            self.n_neighbors // 2) + 1
+
+        cluster_centers = self.kmeans_.cluster_centers_
+        majority_centers = cluster_centers[majority_class & maximum_class, :]
+        self.cluster_centers_ = majority_centers
         self.nn_ = NearestNeighbors(1, metric=self.metric)
-        self.nnc_ = KNeighborsClassifier(1, metric=self.metric)
-        self.x_to_label_ = x[y == to_label]
-        self.nn_.fit(self.x_to_label_)
+        self.nnc_ = KNeighborsClassifier(self.n_neighbors, metric=self.metric)
+        if self.cluster_centers_.shape[0] > 0:
+            self.nn_.fit(self.cluster_centers_)
         self.nnc_.fit(x, y)
         self.to_label_ = to_label
         self.predictions_ = 1
         self.pruned_ = 0
-        return self
+        return self, self.kmeans_
 
     def transform(self, x):
-        check_is_fitted(self, ["nn_", "x_to_label_"])
-        closest = self.nn_.kneighbors(x, return_distance=False)
-        return self.x_to_label_[closest[:, 0]]
+        check_is_fitted(self, ["nn_", "cluster_centers_"])
+        if self.cluster_centers_.shape[0] > 0:
+            closest = self.nn_.kneighbors(x, return_distance=False)
+            return self.cluster_centers_[closest[:, 0]]
+        else:
+            return np.full(x.shape, np.nan)
 
     def score(self, x, y):
-        return self.nnc_.score(x, y)
+        return np.sum(self.predict(x) == y) / x.shape[0]
 
     def predict(self, x):
-        return self.nnc_.predict(x)
+        return self.classes_[self.nnc_.predict(x)]
 
 
 class GreedyTreeLabelTransform(LabelTransformer):

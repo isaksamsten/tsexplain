@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def differences(a, b, axis=0):
+def differences(a, b, axis=0, tolerance=1.e-8):
     """The number of time points that differ between `a` and `b`
 
     :param a: the first time series
@@ -10,7 +10,7 @@ def differences(a, b, axis=0):
     :returns: the fraction of differences
 
     """
-    c = np.isclose(a, b)
+    c = np.isclose(a, b, atol=tolerance)
     return np.mean(1 - np.sum(c, axis=axis) / a.shape[-1])
 
 

@@ -79,10 +79,34 @@ result_writer.writerow([
     "transform_time",
 ])
 
+# k in [0, 10], n in [0, 1000], m in [0, 600]
+multi_class_datasets = [
+    "SyntheticControl",  # shape:(600, 60), classes:6
+    "CBF",  # shape:(930, 128), classes:3
+    "OSULeaf",  # shape:(442, 427), classes:6
+    "ArrowHead",  # shape:(211, 251), classes:3
+    "Fish",  # shape:(350, 463), classes:7
+    "Car",  # shape:(120, 577), classes:4
+    "MiddlePhalanxTW",  # shape:(553, 80), classes:6
+    "Lightning7",  # shape:(143, 319), classes:7
+    "DiatomSizeReduction",  # shape:(322, 345), classes:4
+    "Meat",  # shape:(120, 448), classes:3
+    "ProximalPhalanxTW",  # shape:(605, 80), classes:6
+    "DistalPhalanxOutlineAgeGroup",  # shape:(539, 80), classes:3
+    "ProximalPhalanxOutlineAgeGroup",  # shape:(605, 80), classes:3
+    "MiddlePhalanxOutlineAgeGroup",  # shape:(554, 80), classes:3
+    "DistalPhalanxTW",  # shape:(539, 80), classes:6
+    "Beef",  # shape:(60, 470), classes:5
+    "Plane",  # shape:(210, 144), classes:7
+    "OliveOil",  # shape:(60, 570), classes:4
+    "Trace",  # shape:(200, 275), classes:4
+    "FaceFour",  # shape:(112, 350), classes:4
+]
+
 train_fraction = 0.8
 random_seed = 10
-for k in [1, 3, 5, 7, 9, 11]:
-    for dataset_name in two_class_datasets:
+for k in [1]:
+    for dataset_name in multi_class_datasets:
         rnd = np.random.RandomState(random_seed)
 
         data, meta = arff.loadarff(
@@ -133,24 +157,26 @@ for k in [1, 3, 5, 7, 9, 11]:
 
         for to_label in label_index.keys():
             nn_trans.fit(x_train, y_train, to_label)
-q
-            # if greedy_e_trans.paths_ is None:
-            #     greedy_e_trans.fit(x_train, y_train, to_label)
-            #     incremental_e_trans.__dict__ = greedy_e_trans.__dict__
 
-            nn_score = nn_trans.score(x_test, y_test)
-            #     e_score = greedy_e_trans.score(x_test, y_test)
-            # else:
-            #     greedy_e_trans.to_label_ = to_label
-            #     incremental_e_trans.to_label_ = to_label
+            if greedy_e_trans.paths_ is None:
+                greedy_e_trans.fit(x_train, y_train, to_label)
+                incremental_e_trans.__dict__ = greedy_e_trans.__dict__
+
+                nn_score = nn_trans.score(x_test, y_test)
+                e_score = greedy_e_trans.score(x_test, y_test)
+            else:
+                greedy_e_trans.to_label_ = to_label
+                incremental_e_trans.to_label_ = to_label
 
             methods = {
                 "NN": (nn_trans, nn_score),
-                #            "IE": (greedy_e_trans, e_score),
-                #            "LIE": (incremental_e_trans, e_score)
+                "IE": (greedy_e_trans, e_score),
+                "LIE": (incremental_e_trans, e_score)
             }
             for name, (trans, score) in methods.items():
                 x_test_not_to = x_test[trans.predict(x_test) != to_label]
+                if x_test_not_to.shape[0] == 0:
+                    continue
                 t = time.time()
                 x_prime = trans.transform(x_test_not_to)
                 t = time.time() - t

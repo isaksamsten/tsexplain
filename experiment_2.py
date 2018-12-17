@@ -79,7 +79,7 @@ result_writer.writerow([
     "transform_time",
 ])
 
-# k in [0, 10], n in [0, 1000], m in [0, 600]
+# k in [3, 10], n in [0, 1000], m in [0, 600]
 multi_class_datasets = [
     "SyntheticControl",  # shape:(600, 60), classes:6
     "CBF",  # shape:(930, 128), classes:3
@@ -174,7 +174,8 @@ for k in [1]:
                 "LIE": (incremental_e_trans, e_score)
             }
             for name, (trans, score) in methods.items():
-                x_test_not_to = x_test[trans.predict(x_test) != to_label]
+                tn = (trans.predict(x_test) != to_label) & (y_test != to_label)
+                x_test_not_to = x_test[tn, :]
                 if x_test_not_to.shape[0] == 0:
                     continue
                 t = time.time()

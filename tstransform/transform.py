@@ -104,7 +104,7 @@ class NearestNeighbourLabelTransformer(LabelTransformer):
 
         majority_class = center_prob[:, to_idx] > (1.0 / n_classes)
         maximum_class = center_majority[:, to_idx] >= (
-            self.n_neighbors // 2) + 1
+            self.n_neighbors // n_classes) + 1
 
         cluster_centers = self.kmeans_.cluster_centers_
         majority_centers = cluster_centers[majority_class & maximum_class, :]

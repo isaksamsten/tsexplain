@@ -194,6 +194,15 @@ class GreedyTreeLabelTransform(LabelTransformer):
         self.predictions_ = predictions / float(x.shape[0])
         return x_prime
 
+    def _compute_cost(self, a, b):
+        # Compute the euclidean norm
+        # If a and b are vectors compute only their
+        # cost. Otherwise compute the cost for all rows.
+        if a.ndim == 1 and b.ndim == 1:
+            return np.linalg.norm(a - b)
+        else:
+            return np.linalg.norm(a - b, axis=1)
+
     def _transform_single(self, x_i):
         path_list = self.paths_[self.to_label_]
         x_prime = np.empty([len(path_list), x_i.shape[0]])
@@ -201,7 +210,8 @@ class GreedyTreeLabelTransform(LabelTransformer):
             x_i_prime = self._transform_single_path(x_i.copy(), path)
             x_prime[i, :] = x_i_prime
 
-        cost = np.linalg.norm(x_prime - x_i, axis=1)
+        #np.linalg.norm(x_prime - x_i, axis=1)
+        cost = self._compute_cost(x_prime, x_i)
         cost_sort = np.argsort(cost)
 
         # If the cost of prediction didn't carry the overhead of
@@ -349,7 +359,7 @@ class LockingIncrementalTreeLabelTransform(IncrementalTreeLabelTransform):
                 cond = self.ensemble_.predict(x_prime_pred) == self.to_label_
                 x_prime_i = x_prime_pred[cond]
                 if x_prime_i.shape[0] > 0:
-                    cost = np.linalg.norm(x_prime_i - x_orig, axis=1)
+                    cost = self._compute_cost(x_prime_i, x_orig)
                     argmin_cost = np.argmin(cost)
                     min_cost = cost[argmin_cost]
                     if min_cost < best_cost:
@@ -375,7 +385,7 @@ class LockingIncrementalTreeLabelTransform(IncrementalTreeLabelTransform):
                     x_prime[location:(location + len(shapelet))] = impute_shape
                     locked.append((location, location + len(shapelet)))
 
-                    cost = np.linalg.norm(x_prime - x_orig)
+                    cost = self._compute_cost(x_prime, x_orig)
                     if cost >= best_cost:
                         return None
 
@@ -390,7 +400,7 @@ class LockingIncrementalTreeLabelTransform(IncrementalTreeLabelTransform):
                     x_prime[location:(location + len(shapelet))] = impute_shape
                     locked.append((location, location + len(shapelet)))
 
-                    cost = np.linalg.norm(x_prime - x_orig)
+                    cost = self._compute_cost(x_prime, x_orig)
                     if cost >= best_cost:
                         return None
 
